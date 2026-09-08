@@ -1,14 +1,13 @@
 import './App.css'
 import { useState, useEffect } from 'react'
+import { Routes, Route } from 'react-router-dom';
+import { CreateProject } from './pages/CreateProject.jsx';
 
 function App() {
-  useEffect(() => {
-    pingApi();
-  }, [])
   return (
-    <>
-      Hello world
-    </>
+    <Routes>
+      <Route path="/" element={<CreateProject />} />
+    </Routes>
   )
 }
 
