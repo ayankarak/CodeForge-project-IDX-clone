@@ -1,7 +1,7 @@
 import { createProjectService, getProjectTreeService } from "../service/projectService.js";
 
 export const createProjectController = async (req, res) => {
-    const projectId = await createProjectService
+    const projectId = await createProjectService();
     
     return res.json({ message: 'Project created successfully' });
 }
