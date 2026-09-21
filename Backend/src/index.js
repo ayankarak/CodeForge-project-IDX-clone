@@ -8,6 +8,7 @@ import{ createServer } from 'node:http';
 import chokidar from 'chokidar';
 //import path from 'node:path';
 import { handleEditorSocketEvents } from './socketHandlers/editorHandler.js';
+import queryString from 'query-string'
 
 const app = express();
 const server = createServer(app);
