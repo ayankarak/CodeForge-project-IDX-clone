@@ -16,11 +16,11 @@ export const TreeStructure = () => {
         y: fileContextY } = useFileContextMenuStore();
 
         const {
-        folder,
-        isOpen: isFolderContextOpen,
-        x: folderContextX,
-        y: folderContextY
-    } = useFolderContextMenuStore();
+            folder,
+            isOpen: isFolderContextOpen,
+            x: folderContextX,
+            y: folderContextY
+        } = useFolderContextMenuStore();
 
 
     useEffect(() => {

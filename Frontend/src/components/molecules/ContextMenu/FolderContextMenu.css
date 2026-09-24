@@ -1,12 +1,13 @@
 .folderContextOptionsWrapper {
     position: fixed;
-    background: white;
+    background: #363545;
     border: 1px solid #ddd;
     padding: 5px;
     z-index: 1000;
 }
 
 .folderContextButton {
+    color: white;
     display: block;
     width: 100%;
     border: none;
@@ -17,5 +18,5 @@
 }
 
 .folderContextButton:hover {
-    background: #f1f1f1;
+    background: #4d4b4b;
 }
