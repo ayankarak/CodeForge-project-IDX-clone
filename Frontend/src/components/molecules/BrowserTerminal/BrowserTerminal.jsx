@@ -2,14 +2,17 @@ import { Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import "@xterm/xterm/css/xterm.css"; // required styles
 import { useEffect, useRef } from 'react';
-import { io } from 'socket.io-client';
-import { useParams } from 'react-router-dom';
+import { AttachAddon } from '@xterm/addon-attach';
+import { useTerminalSocketStore } from '../../../store/terminalSocketStore';
 
 export const BrowserTerminal = () => {
 
     const terminalRef = useRef(null);
-    const socket = useRef(null);
-    const {projectId: projectIdFromUrl } = useParams();
+    // const socket = useRef(null);
+    // const {projectId: projectIdFromUrl } = useParams();
+
+
+    const { terminalSocket } = useTerminalSocketStore();
     useEffect(() => {
         const term = new Terminal({
             cursorBlink: true,
@@ -33,26 +36,19 @@ export const BrowserTerminal = () => {
         term.loadAddon(fitAddon);
         fitAddon.fit();
 
-        socket.current = io(`${import.meta.env.VITE_BACKEND_URL}/terminal`, {
-            query: {
-                projectId: projectIdFromUrl,
-            },
-        });
-
-        socket.current.on("shell-output", (data) => {
-            term.write(data);
-        });
-
-        term.onData((data) => {
-            console.log(data);
-            socket.current.emit("shell-input", data);
-        });
+        if(terminalSocket) {
+            terminalSocket.onopen = () => {
+                const attachAddon = new AttachAddon(terminalSocket);
+                term.loadAddon(attachAddon);
+                // socket.current = ws;
+            }
+        }
 
         return () => {
             term.dispose();
-            socket.current.disconnect();
+            //socket.current.disconnect();
         }
-    }, [])
+    }, [terminalSocket])
 
     return (
         <div
