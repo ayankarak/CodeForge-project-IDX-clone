@@ -7,10 +7,6 @@ import{ createServer } from 'node:http';
 import chokidar from 'chokidar';
 //import path from 'node:path';
 import { handleEditorSocketEvents } from './socketHandlers/editorHandler.js';
-import queryString from 'query-string'
-import { handleContainerCreate, listContainer } from './containers/handleContainerCreate.js';
-import { WebSocketServer } from 'ws';
-import { handleTerminalCreation } from './containers/handleTerminalCreation.js';
 
 const app = express();
 const server = createServer(app);
@@ -59,13 +55,6 @@ editorNamespace.on("connection", (socket) => {
         console.log(event, path);
       });
     }
-
-    socket.on("getPort", () => {
-        console.log("getPort event received");
-        listContainer();
-    })
-
-
     handleEditorSocketEvents(socket, editorNamespace);
 
 });
@@ -73,43 +62,4 @@ editorNamespace.on("connection", (socket) => {
 server.listen(port, () => {
   console.log(`Server is running on port ${port}`);
   console.log("process.cwd()");
-});
-
-const webSocketForTerminal = new WebSocketServer({
-    noServer: true
-});
-
-webSocketForTerminal.on("connection", (ws, req, container) => {
-    console.log("Terminal connected", container);
-
-    handleTerminalCreation(container, ws);
-
-    ws.on("close", () => {
-        container.remove({ force: true }, (err, data) => {
-            if (err) {
-                console.log("Error while removing container", err);
-                return;
-            }
-
-            console.log("Container removed", data);
-        });
-    });
-});
-
-server.on("upgrade", (req, tcp, head) => {
-    /**
-     * req: Incoming http request
-     * socket: TCP socket
-     * head: Buffer containing the first packet of the upgraded stream
-     */
-    // This callback will be called when a client tries to connect to the server through websocket
-    const isTerminal = req.url.includes("/terminal");
-
-    if(isTerminal) {
-        console.log("req url received", req.url);
-        const projectId = req.url.split("=")[1];
-        console.log("Project id received after connection", projectId);
-
-        handleContainerCreate(projectId, webSocketForTerminal, req, tcp, head);
-    }
 });
