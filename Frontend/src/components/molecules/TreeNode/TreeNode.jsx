@@ -4,6 +4,7 @@ import { FileIcon } from "../../atoms/FileIcon/Fileicon";
 import { useEditorSocketStore } from "../../../store/editorSocketStore";
 import { useFileContextMenuStore } from "../../../store/fileContextMenuStore";
 import { useFolderContextMenuStore } from "../../../store/folderContextMenuStore";
+import { useClipboardStore } from "../../../store/clipboardStore";
 
 export const TreeNode = ({
     fileFolderData
@@ -26,6 +27,8 @@ export const TreeNode = ({
         setX: setFolderContextMenuX,
         setY: setFolderContextMenuY
     } = useFolderContextMenuStore();
+
+    const { setSelectedItem } = useClipboardStore();
 
 
     function toggleVisibility(name) {
@@ -81,7 +84,9 @@ export const TreeNode = ({
             {fileFolderData.children /** If the current node is a folder ? */ ? (
                 /** If the current node is a folder, render it as a button */
                 <button
-                    onClick={() => toggleVisibility(fileFolderData.name)}
+                    onClick={() => {toggleVisibility(fileFolderData.name);
+                        setSelectedItem(fileFolderData.path, "folder");
+                    }}
                     onContextMenu={(e) => handleContextMenuForFolders(e, fileFolderData.path)}
                     style={{
                         border: "none",
@@ -111,6 +116,7 @@ export const TreeNode = ({
                             marginLeft: "18px",
                             //color: "black"
                         }}
+                        onClick={()=>{setSelectedItem(fileFolderData.path, "file");}}
                         onContextMenu={(e) => handleContextMenuForFiles(e, fileFolderData.path)}
                         onDoubleClick={() => handleDoubleClick(fileFolderData)}
                     >

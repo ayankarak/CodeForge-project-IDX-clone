@@ -50,6 +50,10 @@ export const useEditorSocketStore = create((set) => ({
             portSetter(port);
         })
 
+        incomingSocket?.on("copyPathSuccess", ({ path }) => {
+            console.log("Path copied successfully", path);
+            projectTreeStructureSetter();
+        });
 
         set({
             editorSocket: incomingSocket
