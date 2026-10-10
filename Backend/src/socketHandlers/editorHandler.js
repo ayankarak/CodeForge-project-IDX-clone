@@ -1,4 +1,5 @@
 import fs from "fs/promises";
+import path from "path";
 import { getContainerPort } from "../containers/handleContainerCreate.js"
 
 export const handleEditorSocketEvents = (socket, editorNamespace) => {
@@ -121,6 +122,48 @@ export const handleEditorSocketEvents = (socket, editorNamespace) => {
             port: port,
         })
     })
+
+    socket.on("copyPath", async ({ sourcePath, targetDirectory }) => {
+        try {
+            const sourceName = path.basename(sourcePath);
+            const destinationPath = path.join(
+                targetDirectory,
+                sourceName
+            );
+            // Prevent copying a path onto itself
+            if (path.resolve(sourcePath) === path.resolve(destinationPath)) {
+                socket.emit("error", {
+                    data: "Source and destination are the same",
+                });
+                return;
+            }
+            // Don't overwrite an existing file/folder
+            try {
+                await fs.access(destinationPath);
+                socket.emit("error", {
+                    data: "A file or folder with this name already exists",
+                });
+                return;
+            } catch (error) {
+                if (error.code !== "ENOENT") throw error;
+            }
+            await fs.cp(sourcePath, destinationPath, {
+                errorOnExist: true,
+                force: false,
+            });
+            socket.emit("copyPathSuccess", {
+                data: "Copied successfully",
+                path: destinationPath,
+            });
+        } catch (error) {
+            console.error("Copy error:", error);
+
+            socket.emit("error", {
+                data: "Unable to copy file or folder",
+            });
+        }
+    }
+);
 
 
 }
