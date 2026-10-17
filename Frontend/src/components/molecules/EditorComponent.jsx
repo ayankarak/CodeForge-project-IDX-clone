@@ -1,5 +1,5 @@
 import Editor from '@monaco-editor/react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useEditorSocketStore } from '../../store/editorSocketStore';
 import { useActiveFileTabStore } from '../../store/activeFileTabStore';
 import { extensionToFileType } from '../../utils/extensionToFileType';
@@ -14,6 +14,10 @@ export const EditorComponent = () => {
     const { editorSocket } = useEditorSocketStore();
     const { activeFileTab, setActiveFileTab } = useActiveFileTabStore();
 
+    const timerRef = useRef(null);
+    const editorRef = useRef(null);
+    const applyingRemoteChangeRef = useRef(false);
+
     async function downloadTheme() {
         const response = await fetch('/Dracula.json');
         const data = await response.json();
@@ -27,6 +31,13 @@ export const EditorComponent = () => {
     }
 
     function handleChange(value) {
+         // Do not save a change received from another tab.
+        if (applyingRemoteChangeRef.current) {
+            return;
+        }
+        if (!editorSocket || !activeFileTab?.path) {
+            return;
+        }
         // Clear old timer
         if(timerId != null) {
             clearTimeout(timerId);
@@ -42,6 +53,39 @@ export const EditorComponent = () => {
         }, 2000);
         
     }
+
+    // Receive changes made in other tabs of the same project.
+    useEffect(() => {
+        if (!editorSocket) return;
+
+        const handleFileChanged = ({ path, data }) => {
+            // Only update the editor if this file is currently active.
+            if (activeFileTab?.path !== path) {
+                return;
+            }
+
+            // Cancel any pending save of stale local content.
+            clearTimeout(timerRef.current);
+            applyingRemoteChangeRef.current = true;
+            // Update Monaco immediately.
+            const editor = editorRef.current;
+
+            if (editor && editor.getValue() !== data) {
+                editor.setValue(data);
+            }
+
+            // Update the Zustand active-file state too.
+            setActiveFileTab( path, data,
+                activeFileTab.extension
+            );
+
+            applyingRemoteChangeRef.current = false;
+        };
+        editorSocket.on("fileChanged", handleFileChanged);
+        return () => {
+            editorSocket.off("fileChanged", handleFileChanged);
+        };
+    }, [editorSocket, activeFileTab, setActiveFileTab, ]);
 
     useEffect(() => {
         downloadTheme();
