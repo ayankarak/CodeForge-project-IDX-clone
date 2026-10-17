@@ -3,6 +3,19 @@ import path from "path";
 import { getContainerPort } from "../containers/handleContainerCreate.js"
 
 export const handleEditorSocketEvents = (socket, editorNamespace) => {
+
+    // Each browser tab must connect with its projectId.
+    const projectId = socket.handshake.query.projectId;
+
+    if (!projectId) {
+        socket.disconnect(true);
+        return;
+    }
+
+    // Join the room belonging to this project.
+    socket.join(projectId);
+
+
     socket.on("writeFile", async ({ data, pathToFileOrFolder }) => {
         try {
             const response = await fs.writeFile(pathToFileOrFolder, data);
@@ -10,6 +23,13 @@ export const handleEditorSocketEvents = (socket, editorNamespace) => {
                 data: "File written successfully",
                 path: pathToFileOrFolder,
             })
+
+             // Notify other tabs opened with the same projectId.
+            socket.to(projectId).emit("fileChanged", {
+                path: pathToFileOrFolder,
+                data,
+            });
+            
         } catch(error) {
             console.log("Error writing the file", error);
             socket.emit("error", {
